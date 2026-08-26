@@ -96,6 +96,15 @@ h1{font-size:18px; margin:0 0 2px; letter-spacing:-.02em}
 }
 .sizewrap input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
 .sizewrap .unit{font-size:15px; font-weight:600; color:var(--text-2); flex:none}
+.unittog{display:flex; flex:none; border:1px solid var(--border-strong); border-radius:9px; overflow:hidden}
+.unittog button{
+  min-height:46px; min-width:48px; padding:0 12px; font-size:14px; font-weight:700; font-family:inherit;
+  border:0; background:var(--surface-2); color:var(--text-2); cursor:pointer;
+}
+.unittog button + button{border-left:1px solid var(--border-strong)}
+.unittog button.on{background:var(--accent); color:#fff}
+.unittog button:focus-visible{outline:2px solid var(--accent); outline-offset:-2px}
+.sizesub{margin-top:6px; font-size:11.5px; color:var(--text-3)}
 
 /* ---- result ---- */
 .result{border-radius:13px; border:1px solid var(--border); overflow:hidden; margin-bottom:10px; background:var(--surface)}
@@ -117,6 +126,22 @@ h1{font-size:18px; margin:0 0 2px; letter-spacing:-.02em}
 .fna .stat.bord{color:var(--c4)} .fna .stat.unk{color:var(--c0)}
 .fna .why{font-size:12px; color:var(--text-2); margin:5px 0 0}
 .fna .why code{font-family:inherit; font-weight:700; color:var(--text)}
+
+/* ---- 판독지 문구 ---- */
+.report{padding:12px 13px; border-top:1px solid var(--border)}
+.report > .ttl{font-size:11px; font-weight:700; color:var(--text-3); letter-spacing:.03em; margin:0 0 8px}
+.rpt{border:1px solid var(--border); border-radius:9px; background:var(--surface-2); padding:9px 10px; margin-bottom:8px}
+.rpt:last-child{margin-bottom:0}
+.rpt .rhead{display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:5px}
+.rpt .lang{font-size:10.5px; font-weight:700; color:var(--text-3); letter-spacing:.03em}
+.rpt .txt{margin:0; font-size:12.5px; line-height:1.55; word-break:keep-all; overflow-wrap:anywhere; user-select:text; -webkit-user-select:text}
+.copybtn{
+  flex:none; min-height:32px; padding:4px 12px; font-size:11.5px; font-weight:700; font-family:inherit;
+  border:1px solid var(--border-strong); border-radius:7px; background:var(--surface); color:var(--accent); cursor:pointer;
+}
+.copybtn:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.copybtn.done{color:var(--ok); border-color:var(--ok)}
+.report .rnote{margin:7px 0 0; font-size:11px; color:var(--text-3); line-height:1.5}
 
 .why-list{padding:12px 13px}
 .why-list .ttl{font-size:11px; font-weight:700; color:var(--text-3); letter-spacing:.03em; margin:0 0 8px}
@@ -192,6 +217,12 @@ footer a{color:var(--accent); word-break:break-all}
 
 <main>
   <section class="card">
+    <h2>0. 특수 패턴 <span class="opt">먼저 확인</span></h2>
+    <p class="hint">아래 패턴에 해당하면 먼저 선택하세요. 선택 시 아래 1~3번 입력보다 우선 적용됩니다. 해당 없으면 그대로 두고 아래 1~4번을 입력하세요.</p>
+    <div class="opts" id="special"></div>
+  </section>
+
+  <section class="card">
     <h2>1. 구성 <span class="req">필수</span></h2>
     <p class="hint">결절의 내부 구성을 선택하세요.</p>
     <div class="opts" id="comp"></div>
@@ -203,9 +234,9 @@ footer a{color:var(--accent); word-break:break-all}
     <div class="opts" id="echo"></div>
   </section>
 
-  <section class="card">
-    <h2>3. 의심소견 <span class="opt">해당 항목만</span></h2>
-    <p class="hint">3종 중 해당하는 항목을 모두 선택하세요. 하나도 없으면 비워 둡니다.</p>
+  <section class="card" id="susp-card">
+    <h2>3. 의심소견 <span class="opt" id="susp-req">해당 항목만</span></h2>
+    <p class="hint" id="susp-hint">3종 중 해당하는 항목을 모두 선택하세요. 하나도 없으면 비워 둡니다.</p>
     <div class="opts" id="susp"></div>
   </section>
 
@@ -217,19 +248,17 @@ footer a{color:var(--accent); word-break:break-all}
 
   <section class="card">
     <h2>4. 결절 최대직경 <span class="req">FNA 판정에 필요</span></h2>
-    <p class="hint">가장 긴 직경을 cm 단위로 입력하세요. (예: 1.4)</p>
+    <p class="hint" id="size-hint">가장 긴 직경을 입력하세요. (예: 1.4)</p>
     <div class="sizewrap">
       <label class="sr" for="size">결절 최대직경</label>
       <input type="number" id="size" inputmode="decimal" step="0.01" placeholder="0.0" autocomplete="off">
-      <span class="unit">cm</span>
+      <div class="unittog" role="group" aria-label="크기 단위">
+        <button type="button" id="unit-cm" class="on" aria-pressed="true">cm</button>
+        <button type="button" id="unit-mm" aria-pressed="false">mm</button>
+      </div>
     </div>
+    <p class="sizesub" id="sizesub" hidden></p>
     <div id="sizewarn"></div>
-  </section>
-
-  <section class="card">
-    <h2>5. 특수 패턴 <span class="opt">선택</span></h2>
-    <p class="hint">아래 패턴에 해당하면 선택하세요. 선택 시 위 1~3번 입력보다 우선 적용됩니다.</p>
-    <div class="opts" id="special"></div>
   </section>
 
   <h2 style="font-size:13px; margin:18px 0 8px; color:var(--text-2); letter-spacing:.02em">조회 결과</h2>
@@ -275,7 +304,7 @@ var RULES = {
     publishedOnline: "2021-10-26",
     issue: "2021-12",
     url: "https://doi.org/10.3348/kjr.2021.0713",
-    tables: "표 5(초음파 패턴·악성 위험도·생검 크기 기준) 및 각주 †‡§ǁ¶**",
+    tables: "표 5(초음파 패턴·악성 위험도·생검 크기 기준)·각주 †‡§ǁ¶** 및 본문 추적검사 권고 절",
     lastVerified: "2026-08-26",
     secondary: {
       label: "임상 적용 해설",
@@ -288,21 +317,25 @@ var RULES = {
      주의: 이 문헌에서 표 3·표 4는 경부 림프절에 관한 표이며 결절 분류표가 아닙니다.
      국문 해설 문헌(J Korean Soc Radiol 2023)에서는 같은 내용이 표 3·표 4로 실려 있습니다. */
   categories: {
-    "1": { label:"K-TIRADS 1", name:"정상", tone:"t0", cls:"b1", risk:"해당 없음",
+    "1": { label:"K-TIRADS 1", name:"정상", nameEn:"no nodule", tone:"t0", cls:"b1", risk:"해당 없음", riskEn:"not applicable",
            pattern:"결절이 확인되지 않는 경우",
            fna:{ type:"none", text:"해당 없음" } },
-    "2": { label:"K-TIRADS 2", name:"양성", tone:"t2", cls:"b2", risk:"< 3%",
-           pattern:"등에코·고에코 해면상 결절 / 혜성꼬리 인공음영을 동반한 낭내 고에코가 있는 부분낭성 결절 / 순수 낭종 — 의심소견 동반 여부와 무관",
+    "2": { label:"K-TIRADS 2", name:"양성", nameEn:"benign", tone:"t2", cls:"b2", risk:"< 3%", riskEn:"< 3%",
+           pattern:"등에코·고에코 해면상 결절 / 혜성꼬리 인공음영을 동반한 낭내 고에코가 있는 부분낭성 결절 / 순수 낭종 — 의심소견 동반 여부와 무관(원문 표 5 각주 ‡)",
            fna:{ type:"none", text:"크기와 무관하게 권고 대상 아님",
-                 note:"원문 표 5 각주 **: 통상적으로는 권고 대상이 아니나, 지속적이고 유의한 크기 증가를 보이는 결절이나 고주파절제술·수술에 앞선 결절에 대해서는 시행될 수 있다고 기술되어 있습니다." } },
-    "3": { label:"K-TIRADS 3", name:"저의심", tone:"t3", cls:"b3", risk:"3 ~ 10%",
+                 note:"원문 표 5 각주 **: 통상적으로는 권고 대상이 아니나, 지속적이고 유의한 크기 증가를 보이는 결절이나 고주파절제술·수술에 앞선 결절에 대해서는 시행될 수 있다고 기술되어 있습니다." },
+           followUp:"매우 낮은 악성 위험도를 고려해 결절 크기에 따라 2~5년 뒤 첫 추적 초음파를 시행할 수 있다고 기술" },
+    "3": { label:"K-TIRADS 3", name:"저의심", nameEn:"low suspicion", tone:"t3", cls:"b3", risk:"3 ~ 10%", riskEn:"3–10%",
            pattern:"부분낭성 또는 등에코·고에코 결절 중 의심소견 3종이 하나도 없는 경우",
-           fna:{ type:"gt", cm:2.0, text:"> 2.0 cm" } },
-    "4": { label:"K-TIRADS 4", name:"중등도 의심", tone:"t4", cls:"b4", risk:"10 ~ 40%",
+           fna:{ type:"gt", cm:2.0, text:"> 2.0 cm" },
+           followUp:"1·3·5년째 추적 초음파, 5년째까지 크기 변화가 없으면 이후 5년마다" },
+    "4": { label:"K-TIRADS 4", name:"중등도 의심", nameEn:"intermediate suspicion", tone:"t4", cls:"b4", risk:"10 ~ 40%", riskEn:"10–40%",
            pattern:"의심소견이 없는 고형 저에코 결절 / 의심소견이 있는 부분낭성·등에코·고에코 결절 / 전체 석회화 결절 / 미만성 침윤 병변 / 뚜렷한 결절 없이 실질에 광범위한 점상 고에코",
-           fna:{ type:"range", lowerCm:1.0, upperCm:1.5, text:"> 1.0 ~ 1.5 cm" } },
-    "5": { label:"K-TIRADS 5", name:"고의심", tone:"t5", cls:"b5", risk:"> 60%",
+           fna:{ type:"range", lowerCm:1.0, upperCm:1.5, text:"> 1.0 ~ 1.5 cm" },
+           followUp:"1·3·5년째 추적 초음파, 5년째까지 크기 변화가 없으면 이후 3~5년마다" },
+    "5": { label:"K-TIRADS 5", name:"고의심", nameEn:"high suspicion", tone:"t5", cls:"b5", risk:"> 60%", riskEn:"> 60%",
            pattern:"고형 저에코(현저한 저에코 포함) 결절에 의심소견 3종 중 1개 이상이 있는 경우",
+           followUp:"6개월 간격 추적 초음파 1~2년, 성장이 없으면 이후 매년",
            fna:{ type:"gt", cm:1.0, text:"> 1.0 cm",
                  sub:{ fromCm:0.5, toCm:1.0,
                    note:"원문 표 5 각주 ǁ에 따르면 0.5 cm 초과 1.0 cm 이하의 K-TIRADS 5 결절에 대해서도 별도 기술이 있습니다. 기관에 접해 있거나 되돌이후두신경 경로를 따라 후내측 피막에 접한 고위험 소견이 있는 경우 생검이 권고 대상으로 기술되어 있고, 고위험 소견이 없는 경우에도 관리 방침 결정을 위해 생검을 고려할 수 있다고 기술되어 있습니다. 소아에서는 이 구간에서 생검 고려가 기술되어 있습니다. 입력한 크기가 이 구간에 해당하므로 원문 각주를 확인하십시오." } } }
@@ -312,49 +345,57 @@ var RULES = {
 
   /* ---- 입력 항목 정의 ---- */
   composition: [
-    { id:"solid", label:"고형 (solid)", echoRequired:true,
+    { id:"solid", label:"고형 (solid)", echoRequired:true, en:"solid", ko:"고형",
       def:"낭성 성분이 뚜렷하지 않은 결절(no obvious cystic component).",
       note:"낭성 부위가 미미하더라도(10% 미만) 뚜렷하게 있으면 원문 용어상 '고형 우세(predominantly solid)'이며, 분류표에서는 고형이 아니라 부분낭성으로 취급됩니다 — 아래 '부분낭성'을 선택하십시오. (원문 Composition 항 및 Fig. 1: 고형 우세 저에코 결절을 K-TIRADS 3으로 예시)" },
-    { id:"partially_cystic", label:"부분낭성 (partially cystic)", echoRequired:false, showsExtra:true,
+    { id:"partially_cystic", label:"부분낭성 (partially cystic)", echoRequired:false, showsExtra:true, en:"partially cystic", ko:"부분낭성",
       def:"낭성 성분과 고형 성분이 함께 있는 결절(순수 낭종 제외). 원문의 고형 우세(낭성 ≤ 50%)와 낭성 우세(낭성 > 50%)가 모두 여기에 해당합니다.",
       note:"분류표상 부분낭성 결절은 고형 성분의 에코와 무관하게 '부분낭성 또는 등에코·고에코' 패턴군으로 분류됩니다." },
-    { id:"spongiform", label:"해면상 (spongiform)", echoRequired:true,
+    { id:"spongiform", label:"해면상 (spongiform)", echoRequired:true, en:"spongiform", ko:"해면상",
       def:"부분낭성 결절에서 다수의 결절상·선상 미세낭성 부위가 모여 고형 성분의 50%를 초과하는 형태(honeycomb). 기준 분모는 결절 전체가 아니라 고형 성분입니다.",
       note:"해면상 결절은 원문상 부분낭성 결절의 한 형태이며, 양성(K-TIRADS 2) 패턴은 '등에코·고에코 해면상'으로 한정됩니다." },
-    { id:"cystic", label:"낭성 — 순수 낭종 (cystic)", echoRequired:false,
+    { id:"cystic", label:"낭성 — 순수 낭종 (cystic)", echoRequired:false, en:"pure cyst", ko:"순수 낭종",
       def:"내부가 전부 액체로 찬 결절.", note:"" }
   ],
 
   echo: [
-    { id:"marked_hypo", label:"현저한 저에코 (marked hypoechoic)",
+    { id:"marked_hypo", label:"현저한 저에코 (marked hypoechoic)", en:"markedly hypoechoic", ko:"현저한 저에코",
       def:"전경부 근육과 같거나 그보다 낮은 에코.",
       note:"분류표에서는 저에코와 함께 '고형 저에코' 패턴군으로 묶입니다. 현저한 저에코 자체는 의심소견 3종에 포함되지 않습니다." },
-    { id:"hypo", label:"저에코 (hypoechoic)",
+    { id:"hypo", label:"저에코 (hypoechoic)", en:"hypoechoic", ko:"저에코",
       def:"정상 갑상선 실질보다 낮고 전경부 근육보다는 높은 에코.", note:"" },
-    { id:"iso_hyper", label:"등에코 · 고에코 (iso-/hyperechoic)",
+    { id:"iso_hyper", label:"등에코 · 고에코 (iso-/hyperechoic)", en:"iso-/hyperechoic", ko:"등에코·고에코",
       def:"정상 갑상선 실질과 같거나 그보다 높은 에코.", note:"" }
   ],
 
   suspicious: [
-    { id:"punctate", label:"점상 고에코 (punctate echogenic foci)",
+    { id:"punctate", label:"점상 고에코 (punctate echogenic foci)", en:"punctate echogenic foci", ko:"점상 고에코",
       def:"고형 성분 내부의 1 mm 이하 점상 고에코(미세석회화).",
       note:"혜성꼬리 인공음영을 동반한 낭내 고에코는 여기에 해당하지 않습니다." },
-    { id:"nonparallel", label:"비평행 방향 (non-parallel orientation)",
+    { id:"nonparallel", label:"비평행 방향 (non-parallel orientation)", en:"nonparallel orientation", ko:"비평행 방향",
       def:"횡단면에서 전후경이 횡경보다 큰 경우(taller-than-wide).", note:"" },
-    { id:"irregular", label:"불규칙 경계 (irregular margin)",
-      def:"경계가 뚜렷하되 매끄럽지 않고 침상(spiculated) 또는 미세소엽상(microlobulated)인 경우.", note:"" }
+    { id:"irregular", label:"불규칙 경계 (irregular margin)", en:"irregular margin", ko:"불규칙 경계",
+      def:"경계가 뚜렷하되 매끄럽지 않고 침상(spiculated) 또는 미세소엽상(microlobulated)인 경우.",
+      note:"ill-defined(경계 불명확)는 irregular margin이 아닙니다 — 주변 실질과 구분이 뚜렷하지 않은 경계는 의심소견에 해당하지 않습니다. (원문 Table 1: irregular은 '뚜렷하게 식별되나 매끄럽지 않은 경계', ill-defined는 '주변 갑상선 조직과 뚜렷하게 구분되지 않는 경계'로 별도 정의되며, 원문 본문에 smooth·ill-defined 경계는 악성 위험을 높이지 않는다고 기술되어 있습니다.)" }
   ],
 
   extras: [
     { id:"comet_tail", label:"혜성꼬리 인공음영 동반 낭내 고에코", forComposition:"partially_cystic",
+      en:"intracystic echogenic foci and comet-tail artifact", ko:"혜성꼬리 인공음영 동반 낭내 고에코",
       def:"낭성 부위 내 고에코에 혜성꼬리 인공음영(comet-tail artifact)이 동반된 경우.",
-      note:"분류표에서 양성(K-TIRADS 2) 패턴으로 분류됩니다." }
+      note:"분류표에서 양성(K-TIRADS 2) 패턴으로 분류됩니다. 원문 표 5 각주 ‡에 따라 의심소견 동반 여부와 무관하게 적용됩니다." }
   ],
 
   specials: [
-    { id:"entirely_calcified", label:"전체 석회화 결절", def:"완전한 후방음영을 동반하고, 짙은 음영 때문에 연부조직 성분이 전혀 식별되지 않는 결절(고립성 거대석회화).", note:"원문 표 5 각주 †의 정의입니다." },
-    { id:"diffusely_infiltrative", label:"미만성 침윤 병변", def:"뚜렷한 경계의 결절 없이 미만성으로 침윤하는 병변.", note:"" },
-    { id:"extensive_punctate", label:"뚜렷한 결절 없이 실질에 광범위한 점상 고에코", def:"뚜렷한 결절이 확인되지 않으면서 갑상선 실질 전반에 점상 고에코가 광범위하게 분포하는 경우.", note:"" }
+    { id:"entirely_calcified", label:"전체 석회화 결절",
+      en:"Entirely calcified nodule with complete posterior acoustic shadowing", ko:"전체 석회화 결절",
+      def:"완전한 후방음영을 동반하고, 짙은 음영 때문에 연부조직 성분이 전혀 식별되지 않는 결절(고립성 거대석회화).", note:"원문 표 5 각주 †의 정의입니다." },
+    { id:"diffusely_infiltrative", label:"미만성 침윤 병변",
+      en:"Diffusely infiltrative lesion of the thyroid gland", ko:"미만성 침윤 병변",
+      def:"뚜렷한 경계의 결절 없이 미만성으로 침윤하는 병변.", note:"" },
+    { id:"extensive_punctate", label:"뚜렷한 결절 없이 실질에 광범위한 점상 고에코",
+      en:"Extensive parenchymal punctate echogenic foci without a discrete nodule", ko:"뚜렷한 결절 없이 실질의 광범위한 점상 고에코",
+      def:"뚜렷한 결절이 확인되지 않으면서 갑상선 실질 전반에 점상 고에코가 광범위하게 분포하는 경우.", note:"" }
   ],
 
   /* ---- 패턴 → 카테고리 매핑 (위에서부터 먼저 일치하는 규칙 적용) ---- */
@@ -367,11 +408,11 @@ var RULES = {
       desc:"뚜렷한 결절 없이 실질에 광범위한 점상 고에코" },
 
     { id:"pure_cyst",      category:"2", match:{ comp:["cystic"] },
-      desc:"순수 낭종", overrideNote:"의심소견 동반 여부와 무관하게 적용됩니다." },
+      desc:"순수 낭종", overrideNote:"원문 표 5 각주 ‡: 의심소견(점상 고에코·비평행 방향·불규칙 경계) 동반 여부와 무관하게 적용됩니다." },
     { id:"comet_tail",     category:"2", match:{ comp:["partially_cystic"], extra:"comet_tail" },
-      desc:"혜성꼬리 인공음영을 동반한 낭내 고에코가 있는 부분낭성 결절", overrideNote:"의심소견 동반 여부와 무관하게 적용됩니다." },
+      desc:"혜성꼬리 인공음영을 동반한 낭내 고에코가 있는 부분낭성 결절", overrideNote:"원문 표 5 각주 ‡: 의심소견(점상 고에코·비평행 방향·불규칙 경계) 동반 여부와 무관하게 적용됩니다. (원문 대조 확인: 2026-08-26)" },
     { id:"spongiform_iso", category:"2", match:{ comp:["spongiform"], echo:["iso_hyper"] },
-      desc:"등에코·고에코 해면상 결절", overrideNote:"의심소견 동반 여부와 무관하게 적용됩니다." },
+      desc:"등에코·고에코 해면상 결절", overrideNote:"원문 표 5 각주 ‡: 의심소견(점상 고에코·비평행 방향·불규칙 경계) 동반 여부와 무관하게 적용됩니다." },
 
     { id:"spongiform_hypo_susp", category:"4", match:{ comp:["spongiform"], echo:["marked_hypo","hypo"], susp:"any" },
       desc:"저에코 해면상 결절(부분낭성으로 취급) + 의심소견 1개 이상",
@@ -407,7 +448,8 @@ var RULES = {
     borderlineNote:"원문 표 5 각주 ¶: K-TIRADS 4의 절단값은 단일 값이 아니라 1.0~1.5 cm 범위 안에서 초음파 소견, 결절 위치, 임상적 위험인자, 환자 요인(연령·동반질환·선호)을 고려해 정하도록 기술되어 있습니다.",
     sizeAside:     "원문 표 5 각주 §: 경부 림프절 전이 의심, 인접 구조(기관·후두·인두·되돌이후두신경·갑상선주위혈관)로의 명백한 갑상선외 침범, 확인된 원격전이, 수질갑상선암 의심 중 하나라도 있으면 결절 크기와 무관하게 가장 의심되는 결절의 생검이 권고 대상으로 기술되어 있습니다. 이 도구는 크기 기준만 조회하므로 해당 여부는 원문에서 확인하십시오.",
     sizeOutOfRange:"입력한 값이 이 도구의 허용 범위를 벗어나 크기 기준 조회에 사용되지 않았습니다.",
-    indeterminate: "판정 불가"
+    indeterminate: "판정 불가",
+    followUpSource:"출처: 원문 본문 'Follow-Up for Nodules that Do not Meet the Biopsy Criteria' 절 (Korean J Radiol 2021;22:2094-2123). 성인 기준이며 임상 상황에 따라 달라질 수 있으므로 원문을 확인하십시오."
   },
 
   /* ---- 도구 사용상 유의사항 ---- */
@@ -426,7 +468,8 @@ var RULES = {
 var $ = function(id){ return document.getElementById(id); };
 function el(tag, cls, txt){ var n=document.createElement(tag); if(cls) n.className=cls; if(txt!=null) n.textContent=txt; return n; }
 
-var state = { comp:null, echo:null, susp:{}, extra:{}, special:null, size:null, sizeBad:false };
+/* state.size 는 항상 cm 값입니다. state.sizeRaw 는 입력 단위 그대로의 값(표시용)입니다. */
+var state = { comp:null, echo:null, susp:{}, extra:{}, special:null, size:null, sizeRaw:null, unit:"cm", sizeBad:false };
 
 /* 입력값을 반올림하지 않고 그대로 표시합니다.
    toFixed 로 반올림하면 "입력 1.04 cm" 이 "1.0 cm" 으로 표시되면서
@@ -434,6 +477,16 @@ var state = { comp:null, echo:null, susp:{}, extra:{}, special:null, size:null, 
 function fmtCm(v){
   var t = String(v);
   return t.indexOf(".") === -1 ? t + ".0" : t;
+}
+
+/* mm → cm 변환 시 부동소수점 잔재(12 → 1.2000000000000002 등)를 제거합니다. */
+function mmToCm(v){ return parseFloat((v / 10).toPrecision(12)); }
+
+/* 입력 단위 그대로 + (판정에 쓰인 cm 환산) 표시 */
+function fmtSizeDisplay(){
+  if(state.size == null) return "";
+  if(state.unit === "mm") return String(state.sizeRaw) + " mm (= " + fmtCm(state.size) + " cm)";
+  return fmtCm(state.size) + " cm";
 }
 
 /* ---- 출처 배너 ---- */
@@ -606,6 +659,124 @@ function labelOf(list, id){
   for(var i=0;i<list.length;i++) if(list[i].id===id) return list[i].label;
   return null;
 }
+function itemOf(list, id){
+  for(var i=0;i<list.length;i++) if(list[i].id===id) return list[i];
+  return null;
+}
+
+/* ---- 판독지 문구 생성 ----
+   RULES 의 en/ko 필드만 조립합니다. 수치·문구를 여기서 새로 만들지 않습니다. */
+function buildReport(cat, f){
+  var descEn = "", descKo = "";
+  var suspEn = [], suspKo = [];
+
+  if(state.special){
+    var sp = itemOf(RULES.specials, state.special);
+    descEn = sp.en; descKo = sp.ko;
+  } else {
+    if(state.comp !== "cystic"){
+      for(var s=0;s<RULES.suspicious.length;s++){
+        if(state.susp[RULES.suspicious[s].id]){ suspEn.push(RULES.suspicious[s].en); suspKo.push(RULES.suspicious[s].ko); }
+      }
+    }
+    if(state.comp === "cystic"){
+      descEn = "pure cyst"; descKo = "순수 낭종";
+    } else if(state.comp === "solid"){
+      var e1 = itemOf(RULES.echo, state.echo);
+      descEn = "solid " + e1.en + " nodule"; descKo = "고형 " + e1.ko + " 결절";
+    } else if(state.comp === "spongiform"){
+      var e2 = itemOf(RULES.echo, state.echo);
+      descEn = e2.en + " spongiform nodule"; descKo = e2.ko + " 해면상 결절";
+    } else {
+      descEn = "partially cystic nodule"; descKo = "부분낭성 결절";
+      if(state.extra["comet_tail"]){
+        descEn += " with " + RULES.extras[0].en;
+        descKo = RULES.extras[0].ko + "가 있는 부분낭성 결절";
+      }
+    }
+    if(suspEn.length){
+      var joinEn = suspEn.length === 1 ? suspEn[0]
+        : suspEn.length === 2 ? suspEn[0] + " and " + suspEn[1]
+        : suspEn[0] + ", " + suspEn[1] + ", and " + suspEn[2];
+      descEn += (descEn.indexOf(" with ") !== -1 ? ", coexisting " : " with ") + joinEn;
+      descKo += ", " + suspKo.join("·") + " 동반";
+    }
+  }
+
+  var sizeEn = state.size != null ? ", " + fmtCm(state.size) + " cm" : "";
+  var sizeKo = state.size != null ? ", 최대직경 " + fmtCm(state.size) + " cm" : "";
+  var tagEn = " (" + cat.label + ", malignancy risk " + cat.riskEn + ").";
+  var tagKo = " (" + cat.label + " " + cat.name + ", 악성 위험도 " + cat.risk + ")입니다.";
+
+  var basisEn = cat.fna.text ? String(cat.fna.text).replace(" ~ ", "–") : "";
+  var fnaEn = "", fnaKo = "";
+  if(f.status === "meets"){
+    fnaEn = " FNA is recommended (" + basisEn + ").";
+    fnaKo = " FNA 크기 기준(" + cat.fna.text + ")에 해당합니다.";
+  } else if(f.status === "bord"){
+    fnaEn = " FNA may be considered; the biopsy cutoff is determined within " + basisEn.replace(/^>\s*/, "") + " based on US features and clinical factors.";
+    fnaKo = " FNA 기준이 범위(" + cat.fna.text + ")로 제시된 구간에 해당하여 임상 소견에 따라 결정합니다.";
+  } else if(f.status === "no"){
+    fnaEn = " FNA is not indicated by the size criterion (" + basisEn + ").";
+    fnaKo = " FNA 크기 기준(" + cat.fna.text + ")에 해당하지 않습니다.";
+  } else if(f.status === "none"){
+    fnaEn = " FNA is not routinely indicated regardless of size.";
+    fnaKo = " 크기와 무관하게 FNA 권고 대상이 아닙니다.";
+  }
+
+  var en = descEn.charAt(0).toUpperCase() + descEn.slice(1) + sizeEn + tagEn + fnaEn;
+  var ko = descKo + sizeKo + tagKo + fnaKo;
+  return { en: en, ko: ko };
+}
+
+/* clipboard API + execCommand 폴백. 둘 다 실패하면 문구를 선택해 수동 복사를 안내합니다. */
+function copyText(txt, btn, txtEl){
+  function done(){
+    btn.classList.add("done"); btn.textContent = "복사됨 ✓";
+    setTimeout(function(){ btn.classList.remove("done"); btn.textContent = "복사"; }, 1600);
+  }
+  function failed(){
+    if(txtEl && window.getSelection){
+      var range = document.createRange();
+      range.selectNodeContents(txtEl);
+      var sel = window.getSelection();
+      sel.removeAllRanges(); sel.addRange(range);
+    }
+    btn.textContent = "직접 복사하세요";
+    setTimeout(function(){ btn.textContent = "복사"; }, 2400);
+  }
+  function fallback(){
+    var ta = document.createElement("textarea");
+    ta.value = txt; ta.setAttribute("readonly","");
+    ta.style.position = "fixed"; ta.style.left = "-9999px";
+    document.body.appendChild(ta);
+    ta.select(); ta.setSelectionRange(0, txt.length);
+    var ok = false;
+    try{ ok = document.execCommand("copy"); }catch(err){}
+    document.body.removeChild(ta);
+    if(ok) done(); else failed();
+  }
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, fallback);
+  } else {
+    fallback();
+  }
+}
+
+function reportBlock(langLabel, txt){
+  var box = el("div","rpt");
+  var head = el("div","rhead");
+  head.appendChild(el("span","lang", langLabel));
+  var btn = el("button","copybtn","복사");
+  btn.type = "button";
+  btn.setAttribute("aria-label", langLabel + " 판독지 문구 복사");
+  var p = el("p","txt", txt);
+  btn.addEventListener("click", function(){ copyText(txt, btn, p); });
+  head.appendChild(btn);
+  box.appendChild(head);
+  box.appendChild(p);
+  return box;
+}
 
 /* ---- 결과 렌더 ---- */
 /* :has() 미지원 웹뷰 폴백: 선택 상태를 클래스로도 반영 */
@@ -652,11 +823,18 @@ function render(){
     why.appendChild(el("code", null, f.basis));
     if(state.size != null){
       why.appendChild(document.createTextNode(" · 입력한 최대직경: "));
-      why.appendChild(el("code", null, fmtCm(state.size) + " cm"));
+      why.appendChild(el("code", null, fmtSizeDisplay()));
     }
     fnaBox.appendChild(why);
     if(f.note) fnaBox.appendChild(el("p","why", f.note));
     if(f.catNote) fnaBox.appendChild(el("p","why", f.catNote));
+    /* 생검 기준 미달(또는 크기 무관 비대상) 시 원문 추적검사 권고 안내 */
+    if(cat.followUp && (f.status === "no" || f.status === "none")){
+      var fu = el("p","why");
+      fu.appendChild(el("code", null, "추적 초음파(생검 기준 미달 시)"));
+      fu.appendChild(document.createTextNode(" " + cat.followUp + " — " + RULES.phrases.followUpSource));
+      fnaBox.appendChild(fu);
+    }
     if(f.subNote){
       var sb = el("div","missing");
       sb.appendChild(el("b",null,"크기 기준 아래 구간에 대한 원문 각주가 있습니다"));
@@ -703,12 +881,16 @@ function render(){
                                 : "부분낭성 결절은 에코와 무관하게 동일 패턴군으로 분류됩니다.");
     }
 
-    for(var s=0;s<RULES.suspicious.length;s++){
-      var f2 = RULES.suspicious[s];
-      var on = !!state.susp[f2.id];
-      addRow(on ? "✓" : "✗", on ? "y" : "n", s===0 ? "의심소견" : "", f2.label + (on ? " — 충족" : " — 미충족"));
+    if(state.comp === "cystic"){
+      addRow("–","n","의심소견","순수 낭종은 의심소견 동반 여부와 무관하게 양성(K-TIRADS 2)으로 분류되므로 입력이 적용되지 않습니다(원문 표 5 각주 ‡).");
+    } else {
+      for(var s=0;s<RULES.suspicious.length;s++){
+        var f2 = RULES.suspicious[s];
+        var on = !!state.susp[f2.id];
+        addRow(on ? "✓" : "✗", on ? "y" : "n", s===0 ? "의심소견" : "", f2.label + (on ? " — 충족" : " — 미충족"));
+      }
+      addRow(suspCount()>0 ? "✓" : "✗", suspCount()>0 ? "y" : "n", "", "의심소견 3종 중 " + suspCount() + "개 충족");
     }
-    addRow(suspCount()>0 ? "✓" : "✗", suspCount()>0 ? "y" : "n", "", "의심소견 3종 중 " + suspCount() + "개 충족");
 
     if(state.comp === "partially_cystic"){
       var ct = !!state.extra["comet_tail"];
@@ -719,8 +901,8 @@ function render(){
 
   addRow(state.size != null ? "✓" : (state.sizeBad ? "✗" : "?"),
     state.size != null ? "y" : (state.sizeBad ? "n" : "q"), "최대직경",
-    state.size != null ? fmtCm(state.size) + " cm"
-      : (state.sizeBad ? "유효 범위(" + fmtCm(RULES.sizeInput.minCm) + " ~ " + fmtCm(RULES.sizeInput.maxCm) + " cm) 밖 — 사용되지 않음" : "미입력"));
+    state.size != null ? fmtSizeDisplay()
+      : (state.sizeBad ? "유효 범위(" + sizeRangeText() + ") 밖 — 사용되지 않음" : "미입력"));
 
   if(pat){
     var pl = el("div","patline");
@@ -743,7 +925,7 @@ function render(){
       mb.appendChild(ul);
     } else if(pat && pat.category === null){
       mb.appendChild(el("b",null,"분류표에 해당 조합이 명시되어 있지 않습니다"));
-      mb.appendChild(document.createTextNode(pat.indeterminate));
+      mb.appendChild(document.createTextNode(pat.desc + " — 원문 분류표를 직접 확인하시기 바랍니다."));
     } else {
       mb.appendChild(el("b",null,"분류표에서 일치하는 패턴을 찾지 못했습니다"));
       mb.appendChild(document.createTextNode("입력 조합을 다시 확인하고, 원문 분류표를 직접 조회하시기 바랍니다."));
@@ -759,6 +941,19 @@ function render(){
   }
 
   out.appendChild(list);
+
+  /* --- 판독지 문구 --- */
+  if(cat){
+    var rep = buildReport(cat, f);
+    var repBox = el("div","report");
+    repBox.appendChild(el("p","ttl","판독지 문구"));
+    repBox.appendChild(reportBlock("국문", rep.ko));
+    repBox.appendChild(reportBlock("영문", rep.en));
+    if(state.size == null && cat.fna.type !== "none"){
+      repBox.appendChild(el("p","rnote","최대직경을 입력하면 FNA 기준 문구가 문장에 포함됩니다."));
+    }
+    out.appendChild(repBox);
+  }
 }
 
 /* ---- 에코 카드 표시 제어 ---- */
@@ -797,13 +992,24 @@ function syncEchoCard(){
     for(var e=0;e<ec.length;e++) ec[e].checked = false;
   }
 
-  var mainCards = [$("comp"), $("susp")];
-  for(var mc=0; mc<mainCards.length; mc++){
-    var rr = mainCards[mc].querySelectorAll(".opt-row");
-    for(var k=0;k<rr.length;k++){
-      rr[k].classList.toggle("disabled", !!state.special);
-      rr[k].querySelector("input").disabled = !!state.special;
-    }
+  var compRows = $("comp").querySelectorAll(".opt-row");
+  for(var k=0;k<compRows.length;k++){
+    compRows[k].classList.toggle("disabled", !!state.special);
+    compRows[k].querySelector("input").disabled = !!state.special;
+  }
+
+  /* 순수 낭종은 의심소견과 무관하게 K-TIRADS 2 (원문 표 5 각주 ‡) — 의심소견 입력 비활성 */
+  var suspDisabled = !!state.special || state.comp === "cystic";
+  $("susp-hint").textContent = state.special
+    ? "특수 패턴 선택 시 의심소견 입력은 적용되지 않습니다."
+    : (state.comp === "cystic"
+      ? "순수 낭종은 의심소견 동반 여부와 무관하게 양성(K-TIRADS 2)으로 분류되므로(원문 표 5 각주 ‡) 입력이 비활성화됩니다."
+      : "3종 중 해당하는 항목을 모두 선택하세요. 하나도 없으면 비워 둡니다.");
+  $("susp-card").style.opacity = suspDisabled ? ".45" : "";
+  var suspRows = $("susp").querySelectorAll(".opt-row");
+  for(var k2=0;k2<suspRows.length;k2++){
+    suspRows[k2].classList.toggle("disabled", suspDisabled);
+    suspRows[k2].querySelector("input").disabled = suspDisabled;
   }
 }
 
@@ -827,37 +1033,81 @@ $("special").addEventListener("change", function(e){
   state.special = e.target.checked ? e.target.value : null;
   syncEchoCard(); render();
 });
-(function initSizeInput(){
-  var i = $("size"), lim = RULES.sizeInput;
-  i.min = String(lim.minCm); i.max = String(lim.maxCm);
-})();
-
+/* ---- 크기 입력: cm/mm 토글 (내부 판정은 항상 cm) ---- */
+function limitsInUnit(){
+  var lim = RULES.sizeInput;
+  return state.unit === "mm"
+    ? { min: lim.minCm * 10, max: lim.maxCm * 10 }
+    : { min: lim.minCm, max: lim.maxCm };
+}
+function sizeRangeText(){
+  var l = limitsInUnit();
+  return state.unit === "mm"
+    ? l.min + " ~ " + l.max + " mm"
+    : fmtCm(l.min) + " ~ " + fmtCm(l.max) + " cm";
+}
+function syncSizeUnitUI(){
+  var l = limitsInUnit(), i = $("size");
+  i.min = String(l.min); i.max = String(l.max);
+  i.step = state.unit === "mm" ? "0.1" : "0.01";
+  i.placeholder = state.unit === "mm" ? "0" : "0.0";
+  $("unit-cm").classList.toggle("on", state.unit === "cm");
+  $("unit-cm").setAttribute("aria-pressed", state.unit === "cm" ? "true" : "false");
+  $("unit-mm").classList.toggle("on", state.unit === "mm");
+  $("unit-mm").setAttribute("aria-pressed", state.unit === "mm" ? "true" : "false");
+  $("size-hint").textContent = state.unit === "mm"
+    ? "가장 긴 직경을 mm 단위로 입력하세요. (예: 14)"
+    : "가장 긴 직경을 cm 단위로 입력하세요. (예: 1.4)";
+  var sub = $("sizesub");
+  if(state.unit === "mm" && state.size != null){
+    sub.hidden = false;
+    sub.textContent = "판정에는 cm 환산값 " + fmtCm(state.size) + " cm 이 사용됩니다.";
+  } else {
+    sub.hidden = true; sub.textContent = "";
+  }
+}
+function parseSize(){
+  var raw = String($("size").value == null ? "" : $("size").value).trim();
+  var l = limitsInUnit();
+  var v = parseFloat(raw);
+  if(raw === ""){
+    state.size = null; state.sizeRaw = null; state.sizeBad = false;
+  } else if(isFinite(v) && v >= l.min && v <= l.max){
+    state.sizeRaw = v;
+    state.size = state.unit === "mm" ? mmToCm(v) : v;
+    state.sizeBad = false;
+  } else {
+    state.size = null; state.sizeRaw = null; state.sizeBad = true;
+  }
+}
 function renderSizeWarn(){
   var w = $("sizewarn");
   w.textContent = "";
   if(!state.sizeBad) return;
-  var lim = RULES.sizeInput;
+  var hint = state.unit === "cm" ? " mm 단위라면 mm 토글을 사용하십시오." : " cm 단위라면 cm 토글을 사용하십시오.";
   w.appendChild(el("div","sizewarn",
-    RULES.phrases.sizeOutOfRange + " 허용 범위는 " +
-    fmtCm(lim.minCm) + " ~ " + fmtCm(lim.maxCm) + " cm 입니다. 단위가 mm 인지 확인하십시오."));
+    RULES.phrases.sizeOutOfRange + " 허용 범위는 " + sizeRangeText() + " 입니다." + hint));
 }
+function setUnit(u){
+  if(state.unit === u) return;
+  state.unit = u;
+  parseSize();
+  syncSizeUnitUI();
+  renderSizeWarn();
+  render();
+}
+$("unit-cm").addEventListener("click", function(){ setUnit("cm"); });
+$("unit-mm").addEventListener("click", function(){ setUnit("mm"); });
 
-$("size").addEventListener("input", function(e){
-  var raw = String(e.target.value == null ? "" : e.target.value).trim();
-  var lim = RULES.sizeInput;
-  var v = parseFloat(raw);
-  if(raw === ""){
-    state.size = null; state.sizeBad = false;
-  } else if(isFinite(v) && v >= lim.minCm && v <= lim.maxCm){
-    state.size = v; state.sizeBad = false;
-  } else {
-    state.size = null; state.sizeBad = true;
-  }
+$("size").addEventListener("input", function(){
+  parseSize();
+  syncSizeUnitUI();
   renderSizeWarn();
   render();
 });
 
 syncEchoCard();
+syncSizeUnitUI();
 renderSizeWarn();
 render();
 </script>
