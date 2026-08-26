@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="referrer" content="no-referrer">
+<title>K-TIRADS 갑상선결절 판정</title>
+<style>
+:root{
+  --bg:#f4f5f7; --surface:#ffffff; --surface-2:#f8f9fb; --border:#dfe2e8; --border-strong:#c6cbd4;
+  --text:#16181d; --text-2:#5b616e; --text-3:#858b98;
+  --accent:#1f5fbf; --accent-bg:#e8f0fc;
+  --c5:#b3261e; --c5-bg:#fdecea; --c5-bd:#f0b4ae;
+  --c4:#a85800; --c4-bg:#fdf0e0; --c4-bd:#efc48d;
+  --c3:#7a6100; --c3-bg:#fbf5da; --c3-bd:#e2d089;
+  --c2:#1c6b3f; --c2-bg:#e6f4ec; --c2-bd:#a9d6bd;
+  --c0:#4a5060; --c0-bg:#eceef2; --c0-bd:#cdd2db;
+  --ok:#1c6b3f; --no:#8a3a34;
+}
+@media (prefers-color-scheme: dark){
+:root{
+  --bg:#101216; --surface:#191c22; --surface-2:#1f232a; --border:#2e333d; --border-strong:#414855;
+  --text:#e8eaee; --text-2:#a3aab8; --text-3:#7c8391;
+  --accent:#7cb0f5; --accent-bg:#1a2434;
+  --c5:#ff9c92; --c5-bg:#331a18; --c5-bd:#6b322c;
+  --c4:#f0b96b; --c4-bg:#2e2314; --c4-bd:#5f4522;
+  --c3:#ddc866; --c3-bg:#2a2714; --c3-bd:#57501f;
+  --c2:#77d3a0; --c2-bg:#152a1f; --c2-bd:#2c5740;
+  --c0:#b0b7c4; --c0-bg:#232830; --c0-bd:#3b424e;
+  --ok:#77d3a0; --no:#ff9c92;
+}
+}
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Malgun Gothic","맑은 고딕",sans-serif;
+  font-size:15px; line-height:1.55; overflow-x:hidden;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:640px; margin:0 auto; padding:12px 12px 40px;}
+h1{font-size:18px; margin:0 0 2px; letter-spacing:-.02em}
+.sub{font-size:12.5px; color:var(--text-2); margin:0}
+
+/* ---- source banner ---- */
+.srcbar{
+  background:var(--surface); border:1px solid var(--border); border-radius:10px;
+  padding:9px 11px; margin:10px 0 14px; font-size:11.5px; line-height:1.5; color:var(--text-2);
+}
+.srcbar b{color:var(--text); font-weight:600}
+.srcbar a{color:var(--accent); word-break:break-all}
+.srcbar .kindtag{
+  display:inline-block; background:var(--accent-bg); color:var(--accent);
+  border-radius:4px; padding:1px 5px; font-size:10.5px; font-weight:700; margin-right:5px;
+}
+
+/* ---- cards ---- */
+.card{background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:13px 12px; margin-bottom:10px}
+.card > h2{font-size:13px; margin:0 0 2px; letter-spacing:-.01em; display:flex; align-items:baseline; gap:6px; flex-wrap:wrap}
+.req{font-size:10px; font-weight:700; color:var(--accent); background:var(--accent-bg); border-radius:3px; padding:1px 4px}
+.opt{font-size:10px; font-weight:600; color:var(--text-3); background:var(--surface-2); border:1px solid var(--border); border-radius:3px; padding:0 4px}
+.hint{font-size:11.5px; color:var(--text-3); margin:0 0 9px}
+
+/* ---- option rows ---- */
+.opts{display:flex; flex-direction:column; gap:7px}
+.opt-row{
+  display:block; position:relative; border:1px solid var(--border); border-radius:9px;
+  background:var(--surface-2); padding:9px 11px; min-height:44px; cursor:pointer;
+  transition:border-color .12s, background .12s;
+}
+.opt-row input{position:absolute; opacity:0; width:0; height:0}
+.opt-row .lbl{display:flex; align-items:center; gap:9px; font-size:14px; font-weight:600; letter-spacing:-.01em}
+.opt-row .box{
+  flex:none; width:19px; height:19px; border:1.5px solid var(--border-strong); background:var(--surface);
+  display:flex; align-items:center; justify-content:center; font-size:12px; color:transparent; line-height:1;
+}
+.opt-row.radio .box{border-radius:50%}
+.opt-row.check .box{border-radius:5px}
+.opt-row .def{font-size:11.5px; color:var(--text-2); margin:4px 0 0 28px; line-height:1.45}
+.opt-row .def .note{display:block; color:var(--text-3); margin-top:2px}
+.opt-row:has(input:checked){border-color:var(--accent); background:var(--accent-bg)}
+.opt-row:has(input:checked) .box{border-color:var(--accent); background:var(--accent); color:#fff}
+/* :has() 미지원 웹뷰용 폴백 — JS가 .is-on 클래스를 부여합니다 */
+.opt-row.is-on{border-color:var(--accent); background:var(--accent-bg)}
+.opt-row.is-on .box{border-color:var(--accent); background:var(--accent); color:#fff}
+.opt-row:has(input:focus-visible){outline:2px solid var(--accent); outline-offset:2px}
+.opt-row.disabled{opacity:.42; cursor:not-allowed}
+
+/* ---- size ---- */
+.sizewrap{display:flex; align-items:center; gap:9px}
+.sizewrap input{
+  flex:1 1 auto; min-width:0; width:100%; height:46px; padding:0 12px; font-size:17px; font-weight:600;
+  font-family:inherit; color:var(--text); background:var(--surface-2);
+  border:1px solid var(--border-strong); border-radius:9px;
+}
+.sizewrap input:focus{outline:2px solid var(--accent); outline-offset:1px; border-color:var(--accent)}
+.sizewrap .unit{font-size:15px; font-weight:600; color:var(--text-2); flex:none}
+
+/* ---- result ---- */
+.result{border-radius:13px; border:1px solid var(--border); overflow:hidden; margin-bottom:10px; background:var(--surface)}
+.badge{padding:15px 13px; border-bottom:1px solid var(--border)}
+.badge .cat{font-size:27px; font-weight:800; letter-spacing:-.035em; line-height:1.15; margin:0}
+.badge .nm{font-size:14px; font-weight:700; margin:1px 0 0; opacity:.92}
+.badge .risk{font-size:12.5px; margin:7px 0 0; font-weight:600; opacity:.9}
+.badge .risk span{font-weight:400; opacity:.85}
+.t5{background:var(--c5-bg); color:var(--c5); border-bottom-color:var(--c5-bd)}
+.t4{background:var(--c4-bg); color:var(--c4); border-bottom-color:var(--c4-bd)}
+.t3{background:var(--c3-bg); color:var(--c3); border-bottom-color:var(--c3-bd)}
+.t2{background:var(--c2-bg); color:var(--c2); border-bottom-color:var(--c2-bd)}
+.t0{background:var(--c0-bg); color:var(--c0); border-bottom-color:var(--c0-bd)}
+
+.fna{padding:12px 13px; border-bottom:1px solid var(--border)}
+.fna .ttl{font-size:11px; font-weight:700; color:var(--text-3); letter-spacing:.03em; margin:0 0 5px}
+.fna .stat{font-size:15.5px; font-weight:700; margin:0; letter-spacing:-.015em}
+.fna .stat.meets{color:var(--ok)} .fna .stat.no{color:var(--no)}
+.fna .stat.bord{color:var(--c4)} .fna .stat.unk{color:var(--c0)}
+.fna .why{font-size:12px; color:var(--text-2); margin:5px 0 0}
+.fna .why code{font-family:inherit; font-weight:700; color:var(--text)}
+
+.why-list{padding:12px 13px}
+.why-list .ttl{font-size:11px; font-weight:700; color:var(--text-3); letter-spacing:.03em; margin:0 0 8px}
+.row{display:flex; gap:8px; align-items:flex-start; padding:5px 0; border-top:1px solid var(--border); font-size:12.5px}
+.row:first-of-type{border-top:none; padding-top:0}
+.row .mk{flex:none; width:16px; text-align:center; font-weight:800; font-size:12px; line-height:1.5}
+.row .mk.y{color:var(--ok)} .row .mk.n{color:var(--text-3)} .row .mk.q{color:var(--c4)}
+.row .k{flex:none; width:70px; color:var(--text-2)}
+.row .v{flex:1 1 auto; min-width:0; word-break:keep-all; overflow-wrap:anywhere}
+.row .v b{font-weight:700}
+.patline{margin-top:9px; padding:9px 10px; background:var(--surface-2); border:1px solid var(--border); border-radius:8px; font-size:12.5px; line-height:1.5}
+.patline .pk{font-size:10.5px; font-weight:700; color:var(--text-3); letter-spacing:.03em; display:block; margin-bottom:2px}
+.patline .note{display:block; color:var(--text-3); margin-top:4px; font-size:11.5px; line-height:1.5}
+.sizewarn{margin-top:7px; padding:8px 10px; background:var(--c4-bg); border:1px solid var(--c4-bd); border-radius:8px; font-size:11.5px; color:var(--c4); line-height:1.5}
+.missing{margin-top:9px; padding:9px 10px; background:var(--c4-bg); border:1px solid var(--c4-bd); border-radius:8px; font-size:12.5px; color:var(--c4); line-height:1.5}
+.missing b{display:block; margin-bottom:3px}
+.missing ul{margin:0; padding-left:17px}
+
+/* ---- reference ---- */
+details.ref{background:var(--surface); border:1px solid var(--border); border-radius:12px; margin-bottom:10px; overflow:hidden}
+details.ref > summary{
+  padding:13px 12px; font-size:13px; font-weight:700; cursor:pointer; list-style:none;
+  display:flex; justify-content:space-between; align-items:center; gap:8px; min-height:44px;
+}
+details.ref > summary::-webkit-details-marker{display:none}
+details.ref > summary::after{content:"＋"; color:var(--text-3); font-weight:700; flex:none}
+details.ref[open] > summary::after{content:"－"}
+details.ref .body{padding:0 12px 13px}
+.reftbl{display:flex; flex-direction:column; gap:7px}
+.refcard{border:1px solid var(--border); border-left-width:4px; border-radius:8px; padding:8px 10px; background:var(--surface-2)}
+.refcard .h{display:flex; justify-content:space-between; gap:8px; align-items:baseline; flex-wrap:wrap; font-size:13px; font-weight:800; letter-spacing:-.01em}
+.refcard .h .r{font-size:12px; font-weight:700}
+.refcard .p{margin:4px 0 0; font-size:11.5px; color:var(--text-2); line-height:1.5}
+.refcard .f{margin:5px 0 0; font-size:11.5px; font-weight:600}
+.refcard.b5{border-left-color:var(--c5)} .refcard.b5 .h,.refcard.b5 .f{color:var(--c5)}
+.refcard.b4{border-left-color:var(--c4)} .refcard.b4 .h,.refcard.b4 .f{color:var(--c4)}
+.refcard.b3{border-left-color:var(--c3)} .refcard.b3 .h,.refcard.b3 .f{color:var(--c3)}
+.refcard.b2{border-left-color:var(--c2)} .refcard.b2 .h,.refcard.b2 .f{color:var(--c2)}
+.refcard.b1{border-left-color:var(--c0)} .refcard.b1 .h,.refcard.b1 .f{color:var(--c0)}
+.dl{margin:0}
+.dl dt{font-size:12.5px; font-weight:700; margin:10px 0 2px}
+.dl dt:first-child{margin-top:0}
+.dl dd{margin:0; font-size:11.5px; color:var(--text-2); line-height:1.5}
+.caveat{margin-top:11px; padding:9px 10px; border:1px dashed var(--border-strong); border-radius:8px; font-size:11.5px; color:var(--text-2); line-height:1.5}
+.caveat b{color:var(--text)}
+
+.noimg{
+  display:flex; gap:8px; align-items:flex-start; background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 11px; margin-bottom:10px; font-size:11.5px; color:var(--text-2); line-height:1.5;
+}
+.noimg .i{flex:none; font-weight:800; color:var(--text-3)}
+footer{margin-top:14px; padding:12px 11px; border-top:1px solid var(--border); font-size:11.5px; color:var(--text-3); line-height:1.55}
+footer .disc{color:var(--text-2); font-weight:600}
+footer a{color:var(--accent); word-break:break-all}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
+@media (min-width:520px){ .row .k{width:82px} .wrap{padding:16px 16px 48px} h1{font-size:20px} }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>K-TIRADS 갑상선결절 판정</h1>
+  <p class="sub">판독 소견을 선택하면 2021 K-TIRADS 표를 조회해 카테고리와 FNA 크기 기준을 표시합니다.</p>
+</header>
+
+<div class="srcbar" id="srcbar"></div>
+
+<div class="noimg">
+  <span class="i">!</span>
+  <span>이 도구는 <b>영상을 분석하지 않습니다.</b> 사용자가 직접 판독한 소견을 입력받아 학회 권고안의 분류표를 조회할 뿐입니다. 소견 입력값이 결과를 전적으로 결정합니다.</span>
+</div>
+
+<main>
+  <section class="card">
+    <h2>1. 구성 <span class="req">필수</span></h2>
+    <p class="hint">결절의 내부 구성을 선택하세요.</p>
+    <div class="opts" id="comp"></div>
+  </section>
+
+  <section class="card" id="echo-card">
+    <h2>2. 에코 <span class="req" id="echo-req">필수</span></h2>
+    <p class="hint" id="echo-hint">고형 성분의 에코를 선택하세요.</p>
+    <div class="opts" id="echo"></div>
+  </section>
+
+  <section class="card">
+    <h2>3. 의심소견 <span class="opt">해당 항목만</span></h2>
+    <p class="hint">3종 중 해당하는 항목을 모두 선택하세요. 하나도 없으면 비워 둡니다.</p>
+    <div class="opts" id="susp"></div>
+  </section>
+
+  <section class="card" id="extra-card" hidden>
+    <h2>3-1. 추가 소견 <span class="opt">선택</span></h2>
+    <p class="hint">부분낭성 결절에서 해당하는 경우에만 선택하세요.</p>
+    <div class="opts" id="extra"></div>
+  </section>
+
+  <section class="card">
+    <h2>4. 결절 최대직경 <span class="req">FNA 판정에 필요</span></h2>
+    <p class="hint">가장 긴 직경을 cm 단위로 입력하세요. (예: 1.4)</p>
+    <div class="sizewrap">
+      <label class="sr" for="size">결절 최대직경</label>
+      <input type="number" id="size" inputmode="decimal" step="0.01" placeholder="0.0" autocomplete="off">
+      <span class="unit">cm</span>
+    </div>
+    <div id="sizewarn"></div>
+  </section>
+
+  <section class="card">
+    <h2>5. 특수 패턴 <span class="opt">선택</span></h2>
+    <p class="hint">아래 패턴에 해당하면 선택하세요. 선택 시 위 1~3번 입력보다 우선 적용됩니다.</p>
+    <div class="opts" id="special"></div>
+  </section>
+
+  <h2 style="font-size:13px; margin:18px 0 8px; color:var(--text-2); letter-spacing:.02em">조회 결과</h2>
+  <div class="result" id="result" aria-live="polite"></div>
+</main>
+
+<details class="ref">
+  <summary>2021 K-TIRADS 분류표 전체 보기</summary>
+  <div class="body"><div class="reftbl" id="reftbl"></div></div>
+</details>
+
+<details class="ref">
+  <summary>소견 용어 정의</summary>
+  <div class="body"><dl class="dl" id="defs"></dl><div class="caveat" id="caveats"></div></div>
+</details>
+
+<footer>
+  <p class="disc">참고용 도구입니다. 최종 판단은 원문 기준과 심사기관 확인이 필요합니다.</p>
+  <p id="footsrc"></p>
+  <p>환자 정보를 저장하거나 전송하지 않습니다. 모든 계산은 이 기기 안에서만 수행되며 네트워크 요청이 없습니다.</p>
+</footer>
+
+</div>
+
+<script>
+"use strict";
+
+/* =========================================================================
+   RULES — 기준 수치·규칙은 전부 여기에 모읍니다.
+   개정 시 이 객체만 수정하면 됩니다. 아래 로직에는 숫자를 박지 않습니다.
+   ========================================================================= */
+var RULES = {
+
+  meta: {
+    system: "2021 K-TIRADS",
+    kind: "학회 권고안",
+    kindNote: "보험 급여 고시가 아니라 학회 권고안입니다. 급여 인정 여부는 해당 고시·심사기준을 별도로 확인해야 합니다.",
+    issuer: "대한갑상선영상의학회 (Korean Society of Thyroid Radiology)",
+    docTitle: "2021 Korean Thyroid Imaging Reporting and Data System and Imaging-Based Management of Thyroid Nodules: Korean Society of Thyroid Radiology Consensus Statement and Recommendations",
+    authors: "Ha EJ, Chung SR, Na DG, et al.",
+    citation: "Korean J Radiol 2021;22(12):2094-2123",
+    doi: "10.3348/kjr.2021.0713",
+    publishedOnline: "2021-10-26",
+    issue: "2021-12",
+    url: "https://doi.org/10.3348/kjr.2021.0713",
+    tables: "표 5(초음파 패턴·악성 위험도·생검 크기 기준) 및 각주 †‡§ǁ¶**",
+    lastVerified: "2026-08-26",
+    secondary: {
+      label: "임상 적용 해설",
+      citation: "Na DG. Clinical Application of the 2021 K-TIRADS. J Korean Soc Radiol 2023;84(1):92-109",
+      url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC9935946/"
+    }
+  },
+
+  /* 카테고리별 악성 위험도 및 FNA 크기 기준 — 원문(KJR 2021) 표 5.
+     주의: 이 문헌에서 표 3·표 4는 경부 림프절에 관한 표이며 결절 분류표가 아닙니다.
+     국문 해설 문헌(J Korean Soc Radiol 2023)에서는 같은 내용이 표 3·표 4로 실려 있습니다. */
+  categories: {
+    "1": { label:"K-TIRADS 1", name:"정상", tone:"t0", cls:"b1", risk:"해당 없음",
+           pattern:"결절이 확인되지 않는 경우",
+           fna:{ type:"none", text:"해당 없음" } },
+    "2": { label:"K-TIRADS 2", name:"양성", tone:"t2", cls:"b2", risk:"< 3%",
+           pattern:"등에코·고에코 해면상 결절 / 혜성꼬리 인공음영을 동반한 낭내 고에코가 있는 부분낭성 결절 / 순수 낭종 — 의심소견 동반 여부와 무관",
+           fna:{ type:"none", text:"크기와 무관하게 권고 대상 아님",
+                 note:"원문 표 5 각주 **: 통상적으로는 권고 대상이 아니나, 지속적이고 유의한 크기 증가를 보이는 결절이나 고주파절제술·수술에 앞선 결절에 대해서는 시행될 수 있다고 기술되어 있습니다." } },
+    "3": { label:"K-TIRADS 3", name:"저의심", tone:"t3", cls:"b3", risk:"3 ~ 10%",
+           pattern:"부분낭성 또는 등에코·고에코 결절 중 의심소견 3종이 하나도 없는 경우",
+           fna:{ type:"gt", cm:2.0, text:"> 2.0 cm" } },
+    "4": { label:"K-TIRADS 4", name:"중등도 의심", tone:"t4", cls:"b4", risk:"10 ~ 40%",
+           pattern:"의심소견이 없는 고형 저에코 결절 / 의심소견이 있는 부분낭성·등에코·고에코 결절 / 전체 석회화 결절 / 미만성 침윤 병변 / 뚜렷한 결절 없이 실질에 광범위한 점상 고에코",
+           fna:{ type:"range", lowerCm:1.0, upperCm:1.5, text:"> 1.0 ~ 1.5 cm" } },
+    "5": { label:"K-TIRADS 5", name:"고의심", tone:"t5", cls:"b5", risk:"> 60%",
+           pattern:"고형 저에코(현저한 저에코 포함) 결절에 의심소견 3종 중 1개 이상이 있는 경우",
+           fna:{ type:"gt", cm:1.0, text:"> 1.0 cm",
+                 sub:{ fromCm:0.5, toCm:1.0,
+                   note:"원문 표 5 각주 ǁ에 따르면 0.5 cm 초과 1.0 cm 이하의 K-TIRADS 5 결절에 대해서도 별도 기술이 있습니다. 기관에 접해 있거나 되돌이후두신경 경로를 따라 후내측 피막에 접한 고위험 소견이 있는 경우 생검이 권고 대상으로 기술되어 있고, 고위험 소견이 없는 경우에도 관리 방침 결정을 위해 생검을 고려할 수 있다고 기술되어 있습니다. 소아에서는 이 구간에서 생검 고려가 기술되어 있습니다. 입력한 크기가 이 구간에 해당하므로 원문 각주를 확인하십시오." } } }
+  },
+
+  categoryOrder: ["5","4","3","2","1"],
+
+  /* ---- 입력 항목 정의 ---- */
+  composition: [
+    { id:"solid", label:"고형 (solid)", echoRequired:true,
+      def:"낭성 성분이 뚜렷하지 않은 결절(no obvious cystic component).",
+      note:"낭성 부위가 미미하더라도(10% 미만) 뚜렷하게 있으면 원문 용어상 '고형 우세(predominantly solid)'이며, 분류표에서는 고형이 아니라 부분낭성으로 취급됩니다 — 아래 '부분낭성'을 선택하십시오. (원문 Composition 항 및 Fig. 1: 고형 우세 저에코 결절을 K-TIRADS 3으로 예시)" },
+    { id:"partially_cystic", label:"부분낭성 (partially cystic)", echoRequired:false, showsExtra:true,
+      def:"낭성 성분과 고형 성분이 함께 있는 결절(순수 낭종 제외). 원문의 고형 우세(낭성 ≤ 50%)와 낭성 우세(낭성 > 50%)가 모두 여기에 해당합니다.",
+      note:"분류표상 부분낭성 결절은 고형 성분의 에코와 무관하게 '부분낭성 또는 등에코·고에코' 패턴군으로 분류됩니다." },
+    { id:"spongiform", label:"해면상 (spongiform)", echoRequired:true,
+      def:"부분낭성 결절에서 다수의 결절상·선상 미세낭성 부위가 모여 고형 성분의 50%를 초과하는 형태(honeycomb). 기준 분모는 결절 전체가 아니라 고형 성분입니다.",
+      note:"해면상 결절은 원문상 부분낭성 결절의 한 형태이며, 양성(K-TIRADS 2) 패턴은 '등에코·고에코 해면상'으로 한정됩니다." },
+    { id:"cystic", label:"낭성 — 순수 낭종 (cystic)", echoRequired:false,
+      def:"내부가 전부 액체로 찬 결절.", note:"" }
+  ],
+
+  echo: [
+    { id:"marked_hypo", label:"현저한 저에코 (marked hypoechoic)",
+      def:"전경부 근육과 같거나 그보다 낮은 에코.",
+      note:"분류표에서는 저에코와 함께 '고형 저에코' 패턴군으로 묶입니다. 현저한 저에코 자체는 의심소견 3종에 포함되지 않습니다." },
+    { id:"hypo", label:"저에코 (hypoechoic)",
+      def:"정상 갑상선 실질보다 낮고 전경부 근육보다는 높은 에코.", note:"" },
+    { id:"iso_hyper", label:"등에코 · 고에코 (iso-/hyperechoic)",
+      def:"정상 갑상선 실질과 같거나 그보다 높은 에코.", note:"" }
+  ],
+
+  suspicious: [
+    { id:"punctate", label:"점상 고에코 (punctate echogenic foci)",
+      def:"고형 성분 내부의 1 mm 이하 점상 고에코(미세석회화).",
+      note:"혜성꼬리 인공음영을 동반한 낭내 고에코는 여기에 해당하지 않습니다." },
+    { id:"nonparallel", label:"비평행 방향 (non-parallel orientation)",
+      def:"횡단면에서 전후경이 횡경보다 큰 경우(taller-than-wide).", note:"" },
+    { id:"irregular", label:"불규칙 경계 (irregular margin)",
+      def:"경계가 뚜렷하되 매끄럽지 않고 침상(spiculated) 또는 미세소엽상(microlobulated)인 경우.", note:"" }
+  ],
+
+  extras: [
+    { id:"comet_tail", label:"혜성꼬리 인공음영 동반 낭내 고에코", forComposition:"partially_cystic",
+      def:"낭성 부위 내 고에코에 혜성꼬리 인공음영(comet-tail artifact)이 동반된 경우.",
+      note:"분류표에서 양성(K-TIRADS 2) 패턴으로 분류됩니다." }
+  ],
+
+  specials: [
+    { id:"entirely_calcified", label:"전체 석회화 결절", def:"완전한 후방음영을 동반하고, 짙은 음영 때문에 연부조직 성분이 전혀 식별되지 않는 결절(고립성 거대석회화).", note:"원문 표 5 각주 †의 정의입니다." },
+    { id:"diffusely_infiltrative", label:"미만성 침윤 병변", def:"뚜렷한 경계의 결절 없이 미만성으로 침윤하는 병변.", note:"" },
+    { id:"extensive_punctate", label:"뚜렷한 결절 없이 실질에 광범위한 점상 고에코", def:"뚜렷한 결절이 확인되지 않으면서 갑상선 실질 전반에 점상 고에코가 광범위하게 분포하는 경우.", note:"" }
+  ],
+
+  /* ---- 패턴 → 카테고리 매핑 (위에서부터 먼저 일치하는 규칙 적용) ---- */
+  patterns: [
+    { id:"sp_calcified",   category:"4", match:{ special:"entirely_calcified" },
+      desc:"전체 석회화 결절" },
+    { id:"sp_infiltrative",category:"4", match:{ special:"diffusely_infiltrative" },
+      desc:"미만성 침윤 병변" },
+    { id:"sp_extensive",   category:"4", match:{ special:"extensive_punctate" },
+      desc:"뚜렷한 결절 없이 실질에 광범위한 점상 고에코" },
+
+    { id:"pure_cyst",      category:"2", match:{ comp:["cystic"] },
+      desc:"순수 낭종", overrideNote:"의심소견 동반 여부와 무관하게 적용됩니다." },
+    { id:"comet_tail",     category:"2", match:{ comp:["partially_cystic"], extra:"comet_tail" },
+      desc:"혜성꼬리 인공음영을 동반한 낭내 고에코가 있는 부분낭성 결절", overrideNote:"의심소견 동반 여부와 무관하게 적용됩니다." },
+    { id:"spongiform_iso", category:"2", match:{ comp:["spongiform"], echo:["iso_hyper"] },
+      desc:"등에코·고에코 해면상 결절", overrideNote:"의심소견 동반 여부와 무관하게 적용됩니다." },
+
+    { id:"spongiform_hypo_susp", category:"4", match:{ comp:["spongiform"], echo:["marked_hypo","hypo"], susp:"any" },
+      desc:"저에코 해면상 결절(부분낭성으로 취급) + 의심소견 1개 이상",
+      derivedNote:"양성(K-TIRADS 2) 패턴은 '등에코·고에코 해면상'으로 한정되므로 저에코 해면상 결절은 여기에 해당하지 않습니다. 원문에서 해면상 결절은 부분낭성 결절의 한 형태로 정의되므로, 분류표의 '부분낭성 … 결절' 행을 적용했습니다. 원문에는 해면상 저에코 결절에서 악성 위험도가 증가할 수 있다는 기술이 있으므로 원문 확인이 필요합니다." },
+    { id:"spongiform_hypo_none", category:"3", match:{ comp:["spongiform"], echo:["marked_hypo","hypo"], susp:"none" },
+      desc:"저에코 해면상 결절(부분낭성으로 취급), 의심소견 없음",
+      derivedNote:"양성(K-TIRADS 2) 패턴은 '등에코·고에코 해면상'으로 한정되므로 저에코 해면상 결절은 여기에 해당하지 않습니다. 원문에서 해면상 결절은 부분낭성 결절의 한 형태로 정의되므로, 분류표의 '부분낭성 … 결절' 행을 적용했습니다. 원문에는 해면상 저에코 결절에서 악성 위험도가 증가할 수 있다는 기술이 있으므로 원문 확인이 필요합니다." },
+
+    { id:"solid_hypo_susp",category:"5", match:{ comp:["solid"], echo:["marked_hypo","hypo"], susp:"any" },
+      desc:"고형 저에코 결절 + 의심소견 1개 이상" },
+    { id:"solid_hypo_none",category:"4", match:{ comp:["solid"], echo:["marked_hypo","hypo"], susp:"none" },
+      desc:"고형 저에코 결절, 의심소견 없음" },
+    { id:"solid_iso_susp", category:"4", match:{ comp:["solid"], echo:["iso_hyper"], susp:"any" },
+      desc:"고형 등에코·고에코 결절 + 의심소견 1개 이상" },
+    { id:"solid_iso_none", category:"3", match:{ comp:["solid"], echo:["iso_hyper"], susp:"none" },
+      desc:"고형 등에코·고에코 결절, 의심소견 없음" },
+    { id:"pc_susp",        category:"4", match:{ comp:["partially_cystic"], susp:"any" },
+      desc:"부분낭성 결절 + 의심소견 1개 이상" },
+    { id:"pc_none",        category:"3", match:{ comp:["partially_cystic"], susp:"none" },
+      desc:"부분낭성 결절, 의심소견 없음" }
+  ],
+
+  /* ---- 크기 입력 유효 범위 ---- */
+  sizeInput: { minCm:0.1, maxCm:20.0 },
+
+  /* ---- 출력 문구 (기준 조회 어법) ---- */
+  phrases: {
+    fnaMeets:      "2021 K-TIRADS 권고안상 FNA 대상 크기 기준에 해당합니다.",
+    fnaBorderline: "2021 K-TIRADS 권고안상 FNA 기준이 범위로 제시된 구간에 해당합니다.",
+    fnaNotMeets:   "2021 K-TIRADS 권고안상 FNA 대상 크기 기준에 해당하지 않습니다.",
+    fnaNone:       "2021 K-TIRADS 권고안상 크기와 무관하게 FNA 권고 대상에 해당하지 않습니다.",
+    fnaUnknown:    "판정 불가 — 결절 최대직경이 필요합니다.",
+    borderlineNote:"원문 표 5 각주 ¶: K-TIRADS 4의 절단값은 단일 값이 아니라 1.0~1.5 cm 범위 안에서 초음파 소견, 결절 위치, 임상적 위험인자, 환자 요인(연령·동반질환·선호)을 고려해 정하도록 기술되어 있습니다.",
+    sizeAside:     "원문 표 5 각주 §: 경부 림프절 전이 의심, 인접 구조(기관·후두·인두·되돌이후두신경·갑상선주위혈관)로의 명백한 갑상선외 침범, 확인된 원격전이, 수질갑상선암 의심 중 하나라도 있으면 결절 크기와 무관하게 가장 의심되는 결절의 생검이 권고 대상으로 기술되어 있습니다. 이 도구는 크기 기준만 조회하므로 해당 여부는 원문에서 확인하십시오.",
+    sizeOutOfRange:"입력한 값이 이 도구의 허용 범위를 벗어나 크기 기준 조회에 사용되지 않았습니다.",
+    indeterminate: "판정 불가"
+  },
+
+  /* ---- 도구 사용상 유의사항 ---- */
+  caveats: [
+    "K-TIRADS는 패턴 기반 분류 체계입니다. 개별 소견에 점수를 부여해 합산하는 ACR TI-RADS와는 다른 체계이므로 혼용하지 마십시오.",
+    "카테고리별 악성 위험도(< 3% / 3~10% / 10~40% / > 60%)와 생검 크기 기준은 원문(Korean J Radiol 2021;22:2094-2123) 표 5에서 확인한 값입니다. 이 원문에서 표 3·표 4는 경부 림프절에 관한 표이므로 대조 시 혼동하지 마십시오. 국문 해설 문헌(J Korean Soc Radiol 2023;84:92-109)에서는 같은 내용이 표 3·표 4에 실려 있습니다.",
+    "2021 K-TIRADS는 결절 구성을 고형 / 고형 우세 / 낭성 우세 / 낭성 / 해면상으로 세분합니다. 이 도구는 분류표가 사용하는 패턴 단위(고형 / 부분낭성 / 해면상 / 낭성)로 입력받으므로, 고형 우세와 낭성 우세는 모두 '부분낭성'으로 입력해야 합니다. 낭성 성분이 뚜렷하지 않은 경우에만 '고형'입니다.",
+    "입력값은 사용자의 판독 소견에 전적으로 의존합니다. 소견 용어 정의를 확인한 뒤 입력하십시오."
+  ]
+};
+
+/* =========================================================================
+   로직 — RULES 만 참조합니다.
+   ========================================================================= */
+
+var $ = function(id){ return document.getElementById(id); };
+function el(tag, cls, txt){ var n=document.createElement(tag); if(cls) n.className=cls; if(txt!=null) n.textContent=txt; return n; }
+
+var state = { comp:null, echo:null, susp:{}, extra:{}, special:null, size:null, sizeBad:false };
+
+/* 입력값을 반올림하지 않고 그대로 표시합니다.
+   toFixed 로 반올림하면 "입력 1.04 cm" 이 "1.0 cm" 으로 표시되면서
+   "> 1.0 cm 기준에 해당합니다" 와 화면상 모순이 생기므로 사용하지 않습니다. */
+function fmtCm(v){
+  var t = String(v);
+  return t.indexOf(".") === -1 ? t + ".0" : t;
+}
+
+/* ---- 출처 배너 ---- */
+(function renderSource(){
+  var m = RULES.meta;
+  var b = $("srcbar");
+  b.appendChild(el("span","kindtag", m.kind));
+  var l1 = el("b", null, "기준: " + m.system);
+  b.appendChild(l1);
+  b.appendChild(document.createTextNode(
+    " · " + m.citation + " (온라인 게재 " + m.publishedOnline + ") · " + m.tables +
+    " · 최종 확인 " + m.lastVerified
+  ));
+  b.appendChild(document.createElement("br"));
+  b.appendChild(document.createTextNode(m.issuer + " · 원문: "));
+  var a = el("a", null, m.url);
+  a.href = m.url; a.target="_blank"; a.rel="noopener noreferrer";
+  b.appendChild(a);
+  b.appendChild(document.createElement("br"));
+  b.appendChild(document.createTextNode(m.kindNote));
+
+  var f = $("footsrc");
+  f.appendChild(document.createTextNode(m.docTitle + ". " + m.authors + " " + m.citation + ". doi:" + m.doi + " — "));
+  var a2 = el("a", null, m.url); a2.href=m.url; a2.target="_blank"; a2.rel="noopener noreferrer";
+  f.appendChild(a2);
+  f.appendChild(document.createElement("br"));
+  f.appendChild(document.createTextNode(m.secondary.label + ": " + m.secondary.citation + " — "));
+  var a3 = el("a", null, m.secondary.url); a3.href=m.secondary.url; a3.target="_blank"; a3.rel="noopener noreferrer";
+  f.appendChild(a3);
+})();
+
+/* ---- 입력 UI 생성 ---- */
+function buildOption(opt, type, group){
+  var lab = el("label", "opt-row " + (type==="radio" ? "radio" : "check"));
+  lab.setAttribute("data-id", opt.id);
+  var inp = document.createElement("input");
+  inp.type = type; inp.name = group; inp.value = opt.id;
+  var line = el("div","lbl");
+  var box = el("span","box","✓");
+  line.appendChild(box);
+  line.appendChild(el("span", null, opt.label));
+  lab.appendChild(inp); lab.appendChild(line);
+  if(opt.def){
+    var d = el("div","def", opt.def);
+    if(opt.note) d.appendChild(el("span","note", opt.note));
+    lab.appendChild(d);
+  }
+  return lab;
+}
+
+function buildGroup(containerId, list, type, group){
+  var c = $(containerId);
+  for(var i=0;i<list.length;i++) c.appendChild(buildOption(list[i], type, group));
+}
+
+buildGroup("comp", RULES.composition, "radio", "comp");
+buildGroup("echo", RULES.echo, "radio", "echo");
+buildGroup("susp", RULES.suspicious, "checkbox", "susp");
+buildGroup("extra", RULES.extras, "checkbox", "extra");
+(function(){
+  var c = $("special");
+  for(var i=0;i<RULES.specials.length;i++) c.appendChild(buildOption(RULES.specials[i], "checkbox", "special"));
+})();
+
+/* ---- 참고표 ---- */
+(function renderRef(){
+  var t = $("reftbl");
+  for(var i=0;i<RULES.categoryOrder.length;i++){
+    var k = RULES.categoryOrder[i], c = RULES.categories[k];
+    var card = el("div","refcard " + c.cls);
+    var h = el("div","h");
+    h.appendChild(el("span", null, c.label + " · " + c.name));
+    h.appendChild(el("span","r", "악성 위험도 " + c.risk));
+    card.appendChild(h);
+    card.appendChild(el("p","p", c.pattern));
+    card.appendChild(el("p","f", "FNA 크기 기준: " + c.fna.text));
+    t.appendChild(card);
+  }
+})();
+
+/* ---- 용어 정의 ---- */
+(function renderDefs(){
+  var dl = $("defs");
+  var groups = [
+    ["구성", RULES.composition], ["에코", RULES.echo],
+    ["의심소견 3종", RULES.suspicious], ["추가 소견", RULES.extras], ["특수 패턴", RULES.specials]
+  ];
+  for(var g=0; g<groups.length; g++){
+    var head = el("dt", null, "— " + groups[g][0] + " —");
+    head.style.color = "var(--text-3)"; head.style.fontSize = "11px"; head.style.letterSpacing = ".03em";
+    dl.appendChild(head);
+    var list = groups[g][1];
+    for(var i=0;i<list.length;i++){
+      dl.appendChild(el("dt", null, list[i].label));
+      var dd = el("dd", null, list[i].def + (list[i].note ? " " + list[i].note : ""));
+      dl.appendChild(dd);
+    }
+  }
+  var cv = $("caveats");
+  cv.appendChild(el("b", null, "유의사항"));
+  var ul = document.createElement("ul");
+  ul.style.margin = "4px 0 0"; ul.style.paddingLeft = "17px";
+  for(var j=0;j<RULES.caveats.length;j++) ul.appendChild(el("li", null, RULES.caveats[j]));
+  cv.appendChild(ul);
+})();
+
+/* ---- 패턴 매칭 ---- */
+function suspCount(){
+  var n=0; for(var k in state.susp){ if(state.susp[k]) n++; } return n;
+}
+function matchRule(rule){
+  var m = rule.match;
+  if(m.special) return state.special === m.special;
+  if(state.special) return false;
+  if(m.comp && m.comp.indexOf(state.comp) === -1) return false;
+  if(m.echo && m.echo.indexOf(state.echo) === -1) return false;
+  if(m.extra && !state.extra[m.extra]) return false;
+  if(m.susp === "any" && suspCount() === 0) return false;
+  if(m.susp === "none" && suspCount() > 0) return false;
+  return true;
+}
+function findPattern(){
+  for(var i=0;i<RULES.patterns.length;i++){
+    if(matchRule(RULES.patterns[i])) return RULES.patterns[i];
+  }
+  return null;
+}
+
+/* ---- 누락 입력 확인 ---- */
+function missingInputs(){
+  var miss = [];
+  if(state.special) return miss;
+  if(!state.comp){ miss.push("결절 구성"); return miss; }
+  var comp = null;
+  for(var i=0;i<RULES.composition.length;i++){ if(RULES.composition[i].id===state.comp) comp = RULES.composition[i]; }
+  if(comp && comp.echoRequired && !state.echo) miss.push("에코");
+  return miss;
+}
+
+/* ---- FNA 판정 ---- */
+function evalFna(catKey){
+  var f = RULES.categories[catKey].fna;
+  var res;
+  if(f.type === "none"){
+    res = { status:"none", text:RULES.phrases.fnaNone, basis:f.text };
+  } else if(state.size == null){
+    res = { status:"unk", text:RULES.phrases.fnaUnknown, basis:f.text };
+  } else {
+    var s = state.size;
+    if(f.type === "gt"){
+      res = s > f.cm
+        ? { status:"meets", text:RULES.phrases.fnaMeets, basis:f.text }
+        : { status:"no", text:RULES.phrases.fnaNotMeets, basis:f.text };
+    } else if(f.type === "range"){
+      if(s <= f.lowerCm) res = { status:"no", text:RULES.phrases.fnaNotMeets, basis:f.text };
+      else if(s <= f.upperCm) res = { status:"bord", text:RULES.phrases.fnaBorderline, basis:f.text, note:RULES.phrases.borderlineNote };
+      else res = { status:"meets", text:RULES.phrases.fnaMeets, basis:f.text };
+    } else {
+      res = { status:"unk", text:RULES.phrases.fnaUnknown, basis:f.text };
+    }
+    /* 크기 기준 아래 구간에 원문 각주가 따로 있는 경우(K-TIRADS 5의 0.5~1.0 cm) */
+    if(f.sub && s > f.sub.fromCm && s <= f.sub.toCm) res.subNote = f.sub.note;
+  }
+  if(f.note) res.catNote = f.note;
+  return res;
+}
+
+/* ---- 라벨 조회 ---- */
+function labelOf(list, id){
+  for(var i=0;i<list.length;i++) if(list[i].id===id) return list[i].label;
+  return null;
+}
+
+/* ---- 결과 렌더 ---- */
+/* :has() 미지원 웹뷰 폴백: 선택 상태를 클래스로도 반영 */
+function syncChecked(){
+  var rows = document.querySelectorAll(".opt-row");
+  for(var i=0;i<rows.length;i++){
+    var inp = rows[i].querySelector("input");
+    if(inp) rows[i].classList.toggle("is-on", inp.checked);
+  }
+}
+
+function render(){
+  syncChecked();
+  var out = $("result");
+  out.textContent = "";
+
+  var miss = missingInputs();
+  var pat = miss.length ? null : findPattern();
+  var indeterminate = miss.length > 0 || !pat || pat.category === null;
+  var cat = indeterminate ? null : RULES.categories[pat.category];
+
+  /* --- 배지 --- */
+  var badge = el("div", "badge " + (cat ? cat.tone : "t0"));
+  if(cat){
+    badge.appendChild(el("p","cat", cat.label));
+    badge.appendChild(el("p","nm", cat.name));
+    var r = el("p","risk", "악성 위험도 ");
+    r.appendChild(el("span", null, cat.risk));
+    badge.appendChild(r);
+  } else {
+    badge.appendChild(el("p","cat", RULES.phrases.indeterminate));
+    badge.appendChild(el("p","nm", miss.length ? "입력이 더 필요합니다" : "분류표에 해당 패턴이 명시되어 있지 않습니다"));
+  }
+  out.appendChild(badge);
+
+  /* --- FNA --- */
+  var fnaBox = el("div","fna");
+  fnaBox.appendChild(el("p","ttl","FNA 크기 기준"));
+  if(cat){
+    var f = evalFna(pat.category);
+    fnaBox.appendChild(el("p","stat " + f.status, f.text));
+    var why = el("p","why");
+    why.appendChild(document.createTextNode(cat.label + " 기준: "));
+    why.appendChild(el("code", null, f.basis));
+    if(state.size != null){
+      why.appendChild(document.createTextNode(" · 입력한 최대직경: "));
+      why.appendChild(el("code", null, fmtCm(state.size) + " cm"));
+    }
+    fnaBox.appendChild(why);
+    if(f.note) fnaBox.appendChild(el("p","why", f.note));
+    if(f.catNote) fnaBox.appendChild(el("p","why", f.catNote));
+    if(f.subNote){
+      var sb = el("div","missing");
+      sb.appendChild(el("b",null,"크기 기준 아래 구간에 대한 원문 각주가 있습니다"));
+      sb.appendChild(document.createTextNode(f.subNote));
+      fnaBox.appendChild(sb);
+    }
+    fnaBox.appendChild(el("p","why", RULES.phrases.sizeAside));
+  } else {
+    fnaBox.appendChild(el("p","stat unk", RULES.phrases.indeterminate));
+    fnaBox.appendChild(el("p","why","카테고리가 확정되어야 FNA 크기 기준을 조회할 수 있습니다."));
+  }
+  out.appendChild(fnaBox);
+
+  /* --- 항목별 근거 --- */
+  var list = el("div","why-list");
+  list.appendChild(el("p","ttl","항목별 판정 근거"));
+
+  function addRow(mark, markCls, key, val){
+    var row = el("div","row");
+    row.appendChild(el("span","mk " + markCls, mark));
+    row.appendChild(el("span","k", key));
+    var v = el("span","v");
+    if(typeof val === "string") v.textContent = val; else v.appendChild(val);
+    row.appendChild(v);
+    list.appendChild(row);
+  }
+
+  if(state.special){
+    addRow("✓","y","특수 패턴", labelOf(RULES.specials, state.special));
+    addRow("–","n","기타 입력","특수 패턴 선택 시 구성·에코·의심소견 입력은 적용되지 않습니다.");
+  } else {
+    addRow(state.comp ? "✓" : "?", state.comp ? "y" : "q", "구성",
+      state.comp ? labelOf(RULES.composition, state.comp) : "미선택");
+
+    var compObj = null;
+    for(var i=0;i<RULES.composition.length;i++){ if(RULES.composition[i].id===state.comp) compObj = RULES.composition[i]; }
+    var echoNeeded = compObj ? compObj.echoRequired : true;
+    if(echoNeeded){
+      addRow(state.echo ? "✓" : "?", state.echo ? "y" : "q", "에코",
+        state.echo ? labelOf(RULES.echo, state.echo) : "미선택");
+    } else if(compObj){
+      addRow("–","n","에코",
+        state.comp === "cystic" ? "순수 낭종은 에코 입력이 분류에 사용되지 않습니다."
+                                : "부분낭성 결절은 에코와 무관하게 동일 패턴군으로 분류됩니다.");
+    }
+
+    for(var s=0;s<RULES.suspicious.length;s++){
+      var f2 = RULES.suspicious[s];
+      var on = !!state.susp[f2.id];
+      addRow(on ? "✓" : "✗", on ? "y" : "n", s===0 ? "의심소견" : "", f2.label + (on ? " — 충족" : " — 미충족"));
+    }
+    addRow(suspCount()>0 ? "✓" : "✗", suspCount()>0 ? "y" : "n", "", "의심소견 3종 중 " + suspCount() + "개 충족");
+
+    if(state.comp === "partially_cystic"){
+      var ct = !!state.extra["comet_tail"];
+      addRow(ct ? "✓" : "✗", ct ? "y" : "n", "추가 소견",
+        RULES.extras[0].label + (ct ? " — 충족" : " — 미충족"));
+    }
+  }
+
+  addRow(state.size != null ? "✓" : (state.sizeBad ? "✗" : "?"),
+    state.size != null ? "y" : (state.sizeBad ? "n" : "q"), "최대직경",
+    state.size != null ? fmtCm(state.size) + " cm"
+      : (state.sizeBad ? "유효 범위(" + fmtCm(RULES.sizeInput.minCm) + " ~ " + fmtCm(RULES.sizeInput.maxCm) + " cm) 밖 — 사용되지 않음" : "미입력"));
+
+  if(pat){
+    var pl = el("div","patline");
+    pl.appendChild(el("span","pk","적용된 분류표 패턴"));
+    pl.appendChild(document.createTextNode(pat.desc));
+    if(pat.overrideNote) pl.appendChild(el("span","note", pat.overrideNote));
+    if(pat.derivedNote) pl.appendChild(el("span","note", pat.derivedNote));
+    if(pat.category){
+      pl.appendChild(document.createTextNode(" → " + RULES.categories[pat.category].label));
+    }
+    list.appendChild(pl);
+  }
+
+  if(miss.length || (pat && pat.category === null) || (!pat && !miss.length)){
+    var mb = el("div","missing");
+    if(miss.length){
+      mb.appendChild(el("b",null,"판정에 필요한 입력이 빠져 있습니다"));
+      var ul = document.createElement("ul");
+      for(var q=0;q<miss.length;q++) ul.appendChild(el("li", null, miss[q]));
+      mb.appendChild(ul);
+    } else if(pat && pat.category === null){
+      mb.appendChild(el("b",null,"분류표에 해당 조합이 명시되어 있지 않습니다"));
+      mb.appendChild(document.createTextNode(pat.indeterminate));
+    } else {
+      mb.appendChild(el("b",null,"분류표에서 일치하는 패턴을 찾지 못했습니다"));
+      mb.appendChild(document.createTextNode("입력 조합을 다시 확인하고, 원문 분류표를 직접 조회하시기 바랍니다."));
+    }
+    list.appendChild(mb);
+  }
+
+  if(state.size == null && cat && cat.fna.type !== "none"){
+    var mb2 = el("div","missing");
+    mb2.appendChild(el("b",null,"FNA 크기 기준 판정 불가"));
+    mb2.appendChild(document.createTextNode("결절 최대직경을 입력하면 " + cat.label + " 의 크기 기준(" + cat.fna.text + ") 대비 해당 여부를 조회합니다."));
+    list.appendChild(mb2);
+  }
+
+  out.appendChild(list);
+}
+
+/* ---- 에코 카드 표시 제어 ---- */
+function syncEchoCard(){
+  var compObj = null;
+  for(var i=0;i<RULES.composition.length;i++){ if(RULES.composition[i].id===state.comp) compObj = RULES.composition[i]; }
+  var card = $("echo-card");
+  var disabled = !!state.special || (compObj && compObj.id === "cystic");
+  var required = !state.special && (!compObj || compObj.echoRequired);
+
+  $("echo-req").textContent = required ? "필수" : "선택";
+  $("echo-req").className = required ? "req" : "opt";
+  $("echo-hint").textContent = !state.special && compObj && compObj.id === "partially_cystic"
+    ? "부분낭성 결절은 에코와 무관하게 동일 패턴군으로 분류됩니다. 기록용으로만 선택하세요."
+    : "고형 성분의 에코를 선택하세요.";
+
+  card.style.opacity = disabled ? ".45" : "";
+  var rows = $("echo").querySelectorAll(".opt-row");
+  for(var r=0;r<rows.length;r++){
+    var inp = rows[r].querySelector("input");
+    inp.disabled = disabled;
+    rows[r].classList.toggle("disabled", disabled);
+  }
+  if(disabled && state.echo){
+    state.echo = null;
+    var checked = $("echo").querySelectorAll("input:checked");
+    for(var c=0;c<checked.length;c++) checked[c].checked = false;
+  }
+
+  var ex = $("extra-card");
+  var showExtra = !state.special && compObj && compObj.showsExtra;
+  ex.hidden = !showExtra;
+  if(!showExtra){
+    state.extra = {};
+    var ec = $("extra").querySelectorAll("input:checked");
+    for(var e=0;e<ec.length;e++) ec[e].checked = false;
+  }
+
+  var mainCards = [$("comp"), $("susp")];
+  for(var mc=0; mc<mainCards.length; mc++){
+    var rr = mainCards[mc].querySelectorAll(".opt-row");
+    for(var k=0;k<rr.length;k++){
+      rr[k].classList.toggle("disabled", !!state.special);
+      rr[k].querySelector("input").disabled = !!state.special;
+    }
+  }
+}
+
+/* ---- 이벤트 ---- */
+$("comp").addEventListener("change", function(e){
+  state.comp = e.target.value; syncEchoCard(); render();
+});
+$("echo").addEventListener("change", function(e){
+  state.echo = e.target.value; render();
+});
+$("susp").addEventListener("change", function(e){
+  state.susp[e.target.value] = e.target.checked; render();
+});
+$("extra").addEventListener("change", function(e){
+  state.extra[e.target.value] = e.target.checked; render();
+});
+$("special").addEventListener("change", function(e){
+  // 특수 패턴은 단일 선택으로 동작
+  var boxes = $("special").querySelectorAll("input");
+  for(var i=0;i<boxes.length;i++){ if(boxes[i] !== e.target) boxes[i].checked = false; }
+  state.special = e.target.checked ? e.target.value : null;
+  syncEchoCard(); render();
+});
+(function initSizeInput(){
+  var i = $("size"), lim = RULES.sizeInput;
+  i.min = String(lim.minCm); i.max = String(lim.maxCm);
+})();
+
+function renderSizeWarn(){
+  var w = $("sizewarn");
+  w.textContent = "";
+  if(!state.sizeBad) return;
+  var lim = RULES.sizeInput;
+  w.appendChild(el("div","sizewarn",
+    RULES.phrases.sizeOutOfRange + " 허용 범위는 " +
+    fmtCm(lim.minCm) + " ~ " + fmtCm(lim.maxCm) + " cm 입니다. 단위가 mm 인지 확인하십시오."));
+}
+
+$("size").addEventListener("input", function(e){
+  var raw = String(e.target.value == null ? "" : e.target.value).trim();
+  var lim = RULES.sizeInput;
+  var v = parseFloat(raw);
+  if(raw === ""){
+    state.size = null; state.sizeBad = false;
+  } else if(isFinite(v) && v >= lim.minCm && v <= lim.maxCm){
+    state.size = v; state.sizeBad = false;
+  } else {
+    state.size = null; state.sizeBad = true;
+  }
+  renderSizeWarn();
+  render();
+});
+
+syncEchoCard();
+renderSizeWarn();
+render();
+</script>
+</body>
+</html>
