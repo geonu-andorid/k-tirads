@@ -198,6 +198,11 @@ footer .disc{color:var(--text-2); font-weight:600}
 footer a{color:var(--accent); word-break:break-all}
 .sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap}
 @media (min-width:520px){ .row .k{width:82px} .wrap{padding:16px 16px 48px} h1{font-size:20px} }
+
+/* 기준 확인 1년 경과 배지 */
+.stale-warn{display:inline-block;margin-top:6px;padding:4px 10px;border-radius:8px;
+  background:rgba(240,180,41,.14);border:1px solid rgba(240,180,41,.45);
+  color:#f0b429;font-size:12.5px;font-weight:600;line-height:1.45;}
 </style>
 </head>
 <body>
@@ -493,6 +498,20 @@ function fmtSizeDisplay(){
 (function renderSource(){
   var m = RULES.meta;
   var b = $("srcbar");
+
+// 기준 확인 후 1년 경과 시 경고 배지 (수동 갱신 방어망)
+function staleBadgeHtml(lastVerified){
+  var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(lastVerified||""));
+  if(!m) return "";
+  var then = Date.UTC(+m[1], +m[2]-1, +m[3]);
+  var now = new Date();
+  var today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  var days = Math.round((today - then) / 86400000);
+  if(days <= 365) return "";
+  return '<div class="stale-warn">⚠ 기준 확인 후 ' + Math.floor(days/30) +
+    '개월 경과 — 고시 개정 여부를 확인한 뒤 사용하세요</div>';
+}
+
   b.appendChild(el("span","kindtag", m.kind));
   var l1 = el("b", null, "기준: " + m.system);
   b.appendChild(l1);
@@ -501,6 +520,7 @@ function fmtSizeDisplay(){
     " · 최종 확인 " + m.lastVerified
   ));
   b.appendChild(document.createElement("br"));
+  (function(){ var h = staleBadgeHtml(m.lastVerified); if(h){ var d = document.createElement("div"); d.innerHTML = h; b.appendChild(d.firstChild); } })();
   b.appendChild(document.createTextNode(m.issuer + " · 원문: "));
   var a = el("a", null, m.url);
   a.href = m.url; a.target="_blank"; a.rel="noopener noreferrer";
